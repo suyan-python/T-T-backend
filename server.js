@@ -1,7 +1,7 @@
 import express from "express";
 import "dotenv/config";
 import cors from "cors";
-import bodyParser from "body-parser"; // Add this
+import bodyParser from "body-parser";
 import connectDB from "./configs/db.js";
 import { clerkMiddleware } from "@clerk/express";
 import clerkWebhooks from "./controllers/clerkWebhooks.js";
@@ -19,6 +19,12 @@ const app = express();
 app.use(cors());
 
 // 👉 Apply raw body parser ONLY for Clerk Webhook
+// app.use(
+//   "/api/clerk",
+//   bodyParser.raw({ type: "application/json" }),
+//   clerkWebhooks
+// );
+
 app.use(
   "/api/clerk",
   bodyParser.raw({ type: "application/json" }),
