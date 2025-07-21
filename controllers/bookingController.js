@@ -101,15 +101,15 @@ export const createBooking = async (req, res) => {
     const mailOptions = {
       from: process.env.SENDER_EMAIL,
       to: req.user.email,
-      subject: "Your Booking Confirmation - Jewel Himalayan",
+      subject: "Your Booking Confirmation - TOURS & TRAVELS",
       html: `
     <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 24px; border-radius: 8px;">
-      <img src="https://yourdomain.com/path-to-logo.png" alt="Logo" style="width: 120px; margin-bottom: 24px;" />
+      <img src="https://toursandtravelsnepal.netlify.app/logo1.png" alt="Logo" style="width: 120px; margin-bottom: 24px;" />
 
       <h2 style="color: #dc143c;">Your Booking Confirmation</h2>
 
       <p>Dear <strong>${req.user.username}</strong>,</p>
-      <p>Thank you for booking with <strong>Jewel Himalayan</strong>! Here are your booking details:</p>
+      <p>Thank you for booking with <strong>Tours & Travels</strong>! Here are your booking details:</p>
 
       <table style="width: 100%; margin-top: 16px; border-collapse: collapse;">
         <tr>
@@ -188,7 +188,7 @@ export const downloadReceipt = async (req, res) => {
     doc.pipe(res);
 
     // Logo
-    doc.image("public/logo.png", 50, 30, { width: 100 });
+    doc.image("public/logo1.png", 50, 30, { width: 100 });
 
     doc.moveDown(2).fontSize(18).text("Booking Receipt", { align: "center" });
 
