@@ -2,6 +2,7 @@ import Booking from "../models/Booking.js";
 import Room from "../models/Room.js";
 import Hotel from "../models/Hotel.js";
 import transporter from "../configs/nodemailer.js";
+import PDFDocument from "pdfkit";
 import stripe from "stripe";
 
 // Function to check availability of a room between dates
@@ -100,25 +101,56 @@ export const createBooking = async (req, res) => {
     const mailOptions = {
       from: process.env.SENDER_EMAIL,
       to: req.user.email,
-      subject: "Hotel Booking Details",
+      subject: "Your Booking Confirmation - Jewel Himalayan",
       html: `
-        <h2>Your Booking Details</h2>
-        <p>Dear ${req.user.username},</p>
-        <p>Thank you for your booking! Here are your details:</p>
-        <ul>
-          <li><strong>Booking ID:</strong> ${roomData.packageName}</li>
-          <li><strong>Booking ID:</strong> ${booking._id}</li>
-          <li><strong>Hotel Name:</strong> ${roomData.hotel.name}</li>
-          <li><strong>Location:</strong> ${roomData.hotel.address}</li>
-          <li><strong>Check-In Date:</strong> ${checkIn.toDateString()}</li>
-          <li><strong>Check-Out Date:</strong> ${checkOut.toDateString()}</li>
-          <li><strong>Booking Amount:</strong> ${process.env.CURRENCY || "$"} ${
-        booking.totalPrice
-      }</li>
-        </ul>
-        <p>We look forward to welcoming you!</p>
-        <p>If you need to make any changes, feel free to contact us.</p>
-      `,
+    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 24px; border-radius: 8px;">
+      <img src="https://yourdomain.com/path-to-logo.png" alt="Logo" style="width: 120px; margin-bottom: 24px;" />
+
+      <h2 style="color: #dc143c;">Your Booking Confirmation</h2>
+
+      <p>Dear <strong>${req.user.username}</strong>,</p>
+      <p>Thank you for booking with <strong>Jewel Himalayan</strong>! Here are your booking details:</p>
+
+      <table style="width: 100%; margin-top: 16px; border-collapse: collapse;">
+        <tr>
+          <td><strong>Package Name:</strong></td>
+          <td>${roomData.packageName}</td>
+        </tr>
+        <tr>
+          <td><strong>Booking ID:</strong></td>
+          <td>${booking._id}</td>
+        </tr>
+        <tr>
+          <td><strong>Hotel Name:</strong></td>
+          <td>${roomData.hotel.name}</td>
+        </tr>
+        <tr>
+          <td><strong>Location:</strong></td>
+          <td>${roomData.hotel.address}</td>
+        </tr>
+        <tr>
+          <td><strong>Check-In Date:</strong></td>
+          <td>${checkIn.toDateString()}</td>
+        </tr>
+        <tr>
+          <td><strong>Check-Out Date:</strong></td>
+          <td>${checkOut.toDateString()}</td>
+        </tr>
+        <tr>
+          <td><strong>Total Amount:</strong></td>
+          <td>${process.env.CURRENCY || "$"} ${booking.totalPrice}</td>
+        </tr>
+      </table>
+
+      <p style="margin-top: 24px;">We look forward to welcoming you. If you need to make any changes, feel free to reach out to us.</p>
+
+      <a href="https://toursandtravelsnepal.netlify.app/download-receipt/${
+        booking._id
+      }" style="display: inline-block; margin-top: 16px; padding: 12px 20px; background-color: #dc143c; color: #fff; text-decoration: none; border-radius: 6px;">Download Receipt (PDF)</a>
+
+      <p style="margin-top: 24px; font-size: 12px; color: #777;">© ${new Date().getFullYear()} Tours & Travels. All rights reserved.</p>
+    </div>
+  `,
     };
 
     await transporter.sendMail(mailOptions);
@@ -131,6 +163,51 @@ export const createBooking = async (req, res) => {
   } catch (error) {
     console.log("Booking creation error:", error);
     res.json({ success: false, message: "Failed to create Booking" });
+  }
+};
+
+export const downloadReceipt = async (req, res) => {
+  const bookingId = req.params.id;
+
+  try {
+    const booking = await Booking.findById(bookingId)
+      .populate("room")
+      .populate("hotel")
+      .populate("user");
+
+    if (!booking) return res.status(404).send("Booking not found");
+
+    const doc = new PDFDocument();
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=receipt-${bookingId}.pdf`
+    );
+    res.setHeader("Content-Type", "application/pdf");
+
+    // Pipe to response
+    doc.pipe(res);
+
+    // Logo
+    doc.image("public/logo.png", 50, 30, { width: 100 });
+
+    doc.moveDown(2).fontSize(18).text("Booking Receipt", { align: "center" });
+
+    doc.moveDown();
+    doc.fontSize(12).text(`Booking ID: ${booking._id}`);
+    doc.text(`Name: ${booking.user.username}`);
+    doc.text(`Email: ${booking.user.email}`);
+    doc.text(`Package Name: ${booking.room.packageName}`);
+    doc.text(`Hotel Name: ${booking.hotel.name}`);
+    doc.text(`Hotel Address: ${booking.hotel.address}`);
+    doc.text(`Check-In: ${new Date(booking.checkInDate).toDateString()}`);
+    doc.text(`Check-Out: ${new Date(booking.checkOutDate).toDateString()}`);
+    doc.text(`Guests: ${booking.guests}`);
+    doc.text(`Total Price: ${booking.totalPrice}`);
+    doc.text(`Status: ${booking.status}`);
+    doc.text(`Payment Method: ${booking.paymentMethod}`);
+    doc.end();
+  } catch (error) {
+    res.status(500).send("Error generating receipt");
   }
 };
 

@@ -21,6 +21,7 @@
     "mongoose": "^8.16.2",
     "multer": "^2.0.1",
     "nodemailer": "^7.0.5",
+    "pdfkit": "^0.17.1",
     "react-toastify": "^11.0.5",
     "stripe": "^18.3.0",
     "svix": "^1.69.0"
