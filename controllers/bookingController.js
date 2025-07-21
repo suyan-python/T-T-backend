@@ -48,7 +48,7 @@ export const checkAvailabilityAPI = async (req, res) => {
 // POST /api/bookings/book
 export const createBooking = async (req, res) => {
   try {
-    const { room, checkInDate, checkOutDate, guests } = req.body;
+    const { room, checkInDate, checkOutDate, guests, totalPrice } = req.body;
     const user = req.user._id;
 
     // Use fixed availability check
@@ -73,7 +73,8 @@ export const createBooking = async (req, res) => {
 
     const timeDiff = checkOut.getTime() - checkIn.getTime();
     const nights = Math.ceil(timeDiff / (1000 * 3600 * 24));
-    const totalPrice = roomData.pricePerNight * nights;
+    // Optional: Add a fallback or simple validation
+    const finalPrice = totalPrice || roomData.pricePerNight * guests;
 
     const booking = await Booking.create({
       user,
@@ -82,11 +83,17 @@ export const createBooking = async (req, res) => {
       guests: +guests,
       checkInDate: checkIn,
       checkOutDate: checkOut,
-      totalPrice,
+      totalPrice: finalPrice,
       status: "pending",
       paymentMethod: "Pay At Hotel",
       isPaid: false,
     });
+
+    const expectedPrice = roomData.pricePerNight * guests; // or include nights if needed
+
+    if (totalPrice !== expectedPrice) {
+      return res.json({ success: false, message: "Invalid total price" });
+    }
 
     // Sending email notification (ensure transporter is configured and uncommented)
 
