@@ -106,6 +106,7 @@ export const createBooking = async (req, res) => {
         <p>Dear ${req.user.username},</p>
         <p>Thank you for your booking! Here are your details:</p>
         <ul>
+          <li><strong>Booking ID:</strong> ${roomData.packageName}</li>
           <li><strong>Booking ID:</strong> ${booking._id}</li>
           <li><strong>Hotel Name:</strong> ${roomData.hotel.name}</li>
           <li><strong>Location:</strong> ${roomData.hotel.address}</li>
