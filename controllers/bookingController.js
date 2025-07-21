@@ -17,8 +17,8 @@ const checkAvailability = async ({ checkInDate, checkOutDate, room }) => {
     // Query bookings where existing booking overlaps with requested dates
     const bookings = await Booking.find({
       room,
-      checkInDate: { $lt: checkOut },  // existing booking starts before requested check-out
-      checkOutDate: { $gt: checkIn },  // existing booking ends after requested check-in
+      checkInDate: { $lt: checkOut }, // existing booking starts before requested check-out
+      checkOutDate: { $gt: checkIn }, // existing booking ends after requested check-in
     });
 
     console.log("Found conflicting bookings:", bookings);
@@ -34,7 +34,11 @@ const checkAvailability = async ({ checkInDate, checkOutDate, room }) => {
 export const checkAvailabilityAPI = async (req, res) => {
   try {
     const { room, checkInDate, checkOutDate } = req.body;
-    const isAvailable = await checkAvailability({ checkInDate, checkOutDate, room });
+    const isAvailable = await checkAvailability({
+      checkInDate,
+      checkOutDate,
+      room,
+    });
     res.json({ success: true, isAvailable });
   } catch (error) {
     res.json({ success: false, message: error.message });
@@ -48,7 +52,11 @@ export const createBooking = async (req, res) => {
     const user = req.user._id;
 
     // Use fixed availability check
-    const isAvailable = await checkAvailability({ checkInDate, checkOutDate, room });
+    const isAvailable = await checkAvailability({
+      checkInDate,
+      checkOutDate,
+      room,
+    });
     if (!isAvailable) {
       return res.json({ success: false, message: "Room is not available" });
     }
@@ -80,10 +88,8 @@ export const createBooking = async (req, res) => {
       isPaid: false,
     });
 
- 
-
     // Sending email notification (ensure transporter is configured and uncommented)
-    
+
     const mailOptions = {
       from: process.env.SENDER_EMAIL,
       to: req.user.email,
@@ -98,7 +104,9 @@ export const createBooking = async (req, res) => {
           <li><strong>Location:</strong> ${roomData.hotel.address}</li>
           <li><strong>Check-In Date:</strong> ${checkIn.toDateString()}</li>
           <li><strong>Check-Out Date:</strong> ${checkOut.toDateString()}</li>
-          <li><strong>Booking Amount:</strong> ${process.env.CURRENCY || '$'} ${booking.totalPrice}</li>
+          <li><strong>Booking Amount:</strong> ${process.env.CURRENCY || "$"} ${
+        booking.totalPrice
+      }</li>
         </ul>
         <p>We look forward to welcoming you!</p>
         <p>If you need to make any changes, feel free to contact us.</p>
@@ -106,9 +114,12 @@ export const createBooking = async (req, res) => {
     };
 
     await transporter.sendMail(mailOptions);
-    
 
-    res.json({ success: true, message: "Booking created successfully", booking });
+    res.json({
+      success: true,
+      message: "Booking created successfully",
+      booking,
+    });
   } catch (error) {
     console.log("Booking creation error:", error);
     res.json({ success: false, message: "Failed to create Booking" });
@@ -119,7 +130,9 @@ export const createBooking = async (req, res) => {
 export const getUserBookings = async (req, res) => {
   try {
     const user = req.user._id;
-    const bookings = await Booking.find({ user }).populate("room hotel").sort({ createdAt: -1 });
+    const bookings = await Booking.find({ user })
+      .populate("room hotel")
+      .sort({ createdAt: -1 });
     res.json({ success: true, bookings });
   } catch (error) {
     res.json({ success: false, message: "Failed to fetch bookings" });
@@ -139,9 +152,15 @@ export const getHotelBookings = async (req, res) => {
       .sort({ createdAt: -1 });
 
     const totalBookings = bookings.length;
-    const totalRevenue = bookings.reduce((acc, booking) => acc + booking.totalPrice, 0);
+    const totalRevenue = bookings.reduce(
+      (acc, booking) => acc + booking.totalPrice,
+      0
+    );
 
-    res.json({ success: true, dashboardData: { totalBookings, totalRevenue, bookings } });
+    res.json({
+      success: true,
+      dashboardData: { totalBookings, totalRevenue, bookings },
+    });
   } catch (error) {
     res.json({ success: false, message: "Failed to fetch bookings" });
   }
@@ -158,36 +177,32 @@ export const stripePayment = async (req, res) => {
 
     const stripeInstance = new stripe(process.env.STRIPE_SECRET_KEY);
 
-    const line_items=[
+    const line_items = [
       {
-          price_data: {
-            currency: "usd",
-            product_data: {
-              name: roomData.hotel.name,
-            },
-            unit_amount: booking.totalPrice * 100,
+        price_data: {
+          currency: "usd",
+          product_data: {
+            name: roomData.hotel.name,
           },
-          quantity: 1,
-        }
-      ]
-    
-// Create Checkout Session
-const session = await stripeInstance.checkout.sessions.create({ 
-  line_items,
-mode: "payment",
-success_url: `${origin}/loader/my-bookings`, 
-cancel_url: `${origin}/my-bookings`,
-metadata: {
-bookingId,
-}
-})
+          unit_amount: booking.totalPrice * 100,
+        },
+        quantity: 1,
+      },
+    ];
 
-    res.json({ success: true, url: session.url })
+    // Create Checkout Session
+    const session = await stripeInstance.checkout.sessions.create({
+      line_items,
+      mode: "payment",
+      success_url: `${origin}/loader/my-bookings`,
+      cancel_url: `${origin}/my-bookings`,
+      metadata: {
+        bookingId,
+      },
+    });
+
+    res.json({ success: true, url: session.url });
   } catch (error) {
-   
     res.json({ success: false, message: "Payment Failed" });
   }
-}
-
-
-
+};

@@ -5,7 +5,8 @@ import { v2 as cloudinary } from "cloudinary";
 // API to create a new room for a hotel
 export const createRoom = async (req, res) => {
   try {
-    const { packageName, address, roomType, pricePerNight, amenities } = req.body;
+    const { packageName, address, roomType, pricePerNight, amenities } =
+      req.body;
 
     const hotel = await Hotel.findOne({ owner: req.auth.userId });
     if (!hotel) {
@@ -32,7 +33,6 @@ export const createRoom = async (req, res) => {
     });
 
     res.json({ success: true, message: "Room created successfully" });
-
   } catch (error) {
     res.json({ success: false, message: error.message });
   }
@@ -41,13 +41,15 @@ export const createRoom = async (req, res) => {
 // API to get all rooms
 export const getRooms = async (req, res) => {
   try {
-    const rooms = await Room.find({ isAvailable: true }).populate({
-      path: "hotel",
-      populate: {
-        path: "owner",
-        select: "image",
-      },
-    }).sort({ createdAt: -1 }); // Fixed typo: .sprt → .sort
+    const rooms = await Room.find({ isAvailable: true })
+      .populate({
+        path: "hotel",
+        populate: {
+          path: "owner",
+          select: "image",
+        },
+      })
+      .sort({ createdAt: -1 });
 
     res.json({ success: true, rooms });
   } catch (error) {
@@ -58,12 +60,12 @@ export const getRooms = async (req, res) => {
 // API to get all rooms for a specific hotel
 export const getOwnerRooms = async (req, res) => {
   try {
-    const hotelData = await Hotel.findOne({ owner: req.auth.userId }); // Fixed Hotel() → Hotel.findOne
+    const hotelData = await Hotel.findOne({ owner: req.auth.userId });
     if (!hotelData) {
       return res.json({ success: false, message: "Hotel not found" });
     }
 
-    const rooms = await Room.find({ hotel: hotelData._id }).populate("hotel"); // Fixed line split and removed `.toString()`
+    const rooms = await Room.find({ hotel: hotelData._id }).populate("hotel");
 
     res.json({ success: true, rooms });
   } catch (error) {
