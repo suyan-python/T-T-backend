@@ -22,20 +22,17 @@ export const stripeWebhooks = async (req, res) => {
   // Check for the event type
   if (event.type === "checkout.session.completed") {
     const session = event.data.object;
-    const bookingId = session.metadata.bookingId;
-
-    console.log("📌 Checkout complete for booking:", bookingId);
-
-    // Update booking
-    try {
-      const booking = await Booking.findByIdAndUpdate(
-        bookingId,
-        { isPaid: true },
-        { new: true }
-      );
-      console.log("✅ Booking updated:", booking);
-    } catch (err) {
-      console.error("❌ Failed to update booking:", err.message);
+    const bookingId = session.metadata?.bookingId;
+    if (bookingId) {
+      await Booking.findByIdAndUpdate(bookingId, { isPaid: true });
+      console.log("✅ Booking updated from session.completed");
+    }
+  } else if (event.type === "payment_intent.succeeded") {
+    const intent = event.data.object;
+    const bookingId = intent.metadata?.bookingId;
+    if (bookingId) {
+      await Booking.findByIdAndUpdate(bookingId, { isPaid: true });
+      console.log("✅ Booking updated from payment_intent.succeeded");
     }
   }
 
