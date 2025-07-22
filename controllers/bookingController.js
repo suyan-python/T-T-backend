@@ -251,7 +251,6 @@ export const getHotelBookings = async (req, res) => {
   }
 };
 
-// POST /api/bookings/stripe-payment
 export const stripePayment = async (req, res) => {
   try {
     const { bookingId } = req.body;
@@ -267,7 +266,7 @@ export const stripePayment = async (req, res) => {
         price_data: {
           currency: "usd",
           product_data: {
-            name: roomData.hotel.name,
+            name: roomData.packageName,
           },
           unit_amount: booking.totalPrice * 100,
         },

@@ -10,6 +10,7 @@ import hotelRouter from "./routes/hotelRoutes.js";
 import connectCloudinary from "./configs/cloudinary.js";
 import roomRouter from "./routes/roomRoutes.js";
 import bookingRouter from "./routes/bookingRoutes.js";
+import { stripeWebhooks } from "./controllers/stripeWebhooks.js";
 
 connectDB();
 connectCloudinary();
@@ -17,17 +18,16 @@ connectCloudinary();
 const app = express();
 app.use(cors());
 
-// 👉 Apply raw body parser ONLY for Clerk Webhook
-// app.use(
-//   "/api/clerk",
-//   bodyParser.raw({ type: "application/json" }),
-//   clerkWebhooks
-// );
-
 app.use(
   "/api/clerk",
   bodyParser.raw({ type: "application/json" }),
   clerkWebhooks
+);
+
+app.post(
+  "/api/strip",
+  express.raw({ type: "application/json" }),
+  stripeWebhooks
 );
 
 // 👉 Now apply global middleware

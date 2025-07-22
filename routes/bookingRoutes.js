@@ -15,7 +15,7 @@ bookingRouter.post("/check-availability", checkAvailabilityAPI);
 bookingRouter.post("/book", protect, createBooking);
 bookingRouter.get("/user", protect, getUserBookings);
 bookingRouter.get("/hotel", protect, getHotelBookings);
-bookingRouter.get("/download-receipt/:id", downloadReceipt);
+bookingRouter.get("/download-receipt/:id", protect, downloadReceipt);
 
 bookingRouter.post("/stripe-payment", protect, stripePayment);
 
