@@ -1,40 +1,43 @@
 import stripe from "stripe";
 import Booking from "../models/Booking.js";
 
-const stripeInstance = new stripe(process.env.STRIPE_SECRET_KEY);
+// const stripeInstance = new stripe(process.env.STRIPE_SECRET_KEY);
 
-export const stripeWebhooks = async (request, response) => {
-  const sig = request.headers["stripe-signature"];
+export const stripeWebhooks = async (req, res) => {
+  console.log("⚡ Stripe webhook triggered");
+
+  const sig = req.headers["stripe-signature"];
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
   let event;
 
   try {
-    event = stripeInstance.webhooks.constructEvent(
-      request.body,
-      sig,
-      process.env.STRIPE_WEBHOOK_SECRET
-    );
+    event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+    console.log("✅ Stripe event constructed:", event.type);
   } catch (err) {
-    console.error("Webhook Error:", err.message);
-    return response.status(400).send(`Webhook Error: ${err.message}`);
+    console.error("❌ Webhook signature verification failed.", err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
+  // Check for the event type
   if (event.type === "checkout.session.completed") {
-    console.log("✅ Session completed event received");
-
     const session = event.data.object;
     const bookingId = session.metadata.bookingId;
 
-    try {
-      const result = await Booking.findByIdAndUpdate(bookingId, {
-        isPaid: true,
-        paymentMethod: "Stripe",
-      });
+    console.log("📌 Checkout complete for booking:", bookingId);
 
-      console.log(`Booking ${bookingId} marked as paid:`, result);
-    } catch (error) {
-      console.error("❌ Failed to update booking:", error.message);
+    // Update booking
+    try {
+      const booking = await Booking.findByIdAndUpdate(
+        bookingId,
+        { isPaid: true },
+        { new: true }
+      );
+      console.log("✅ Booking updated:", booking);
+    } catch (err) {
+      console.error("❌ Failed to update booking:", err.message);
     }
   }
 
-  response.json({ received: true });
+  res.status(200).json({ received: true });
 };

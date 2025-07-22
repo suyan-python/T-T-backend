@@ -18,17 +18,12 @@ connectCloudinary();
 const app = express();
 app.use(cors());
 
-// app.post(
-//   "/api/strip",
-//   express.raw({ type: "application/json" }),
-//   stripeWebhooks
-// );
-
 app.use(
   "/api/clerk",
   bodyParser.raw({ type: "application/json" }),
   clerkWebhooks
 );
+
 app.post(
   "/api/stripe",
   express.raw({ type: "application/json" }),
