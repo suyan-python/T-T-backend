@@ -2,8 +2,10 @@ import Booking from "../models/Booking.js";
 import Room from "../models/Room.js";
 import Hotel from "../models/Hotel.js";
 import transporter from "../configs/nodemailer.js";
-import PDFDocument from "pdfkit";
 import stripe from "stripe";
+import PDFDocument from "pdfkit";
+import fs from "fs";
+import path from "path";
 
 // Function to check availability of a room between dates
 const checkAvailability = async ({ checkInDate, checkOutDate, room }) => {
@@ -177,22 +179,26 @@ export const downloadReceipt = async (req, res) => {
 
     if (!booking) return res.status(404).send("Booking not found");
 
-    const doc = new PDFDocument();
+    const doc = new PDFDocument({ size: "A4", margin: 50 });
+
+    // Set headers BEFORE piping
     res.setHeader(
       "Content-Disposition",
       `attachment; filename=receipt-${bookingId}.pdf`
     );
     res.setHeader("Content-Type", "application/pdf");
 
-    // Pipe to response
     doc.pipe(res);
 
-    // Logo
-    doc.image("public/logo1.png", 50, 30, { width: 100 });
+    // Optional: check logo exists
+    const logoPath = path.join(process.cwd(), "public", "logo1.png");
+    if (fs.existsSync(logoPath)) {
+      doc.image(logoPath, 50, 30, { width: 100 });
+    }
 
     doc.moveDown(2).fontSize(18).text("Booking Receipt", { align: "center" });
-
     doc.moveDown();
+
     doc.fontSize(12).text(`Booking ID: ${booking._id}`);
     doc.text(`Name: ${booking.user.username}`);
     doc.text(`Email: ${booking.user.email}`);
@@ -202,12 +208,17 @@ export const downloadReceipt = async (req, res) => {
     doc.text(`Check-In: ${new Date(booking.checkInDate).toDateString()}`);
     doc.text(`Check-Out: ${new Date(booking.checkOutDate).toDateString()}`);
     doc.text(`Guests: ${booking.guests}`);
-    doc.text(`Total Price: ${booking.totalPrice}`);
+    doc.text(`Total Price: Rs. ${booking.totalPrice}`);
     doc.text(`Status: ${booking.status}`);
     doc.text(`Payment Method: ${booking.paymentMethod}`);
+    doc.text(`Payment Status: ${booking.isPaid ? "Paid" : "Payment Pending"}`);
+
     doc.end();
   } catch (error) {
-    res.status(500).send("Error generating receipt");
+    console.error("PDF generation error:", error);
+    if (!res.headersSent) {
+      res.status(500).send("Error generating receipt");
+    }
   }
 };
 
@@ -217,7 +228,9 @@ export const getUserBookings = async (req, res) => {
     const user = req.user._id;
     const bookings = await Booking.find({ user })
       .populate("room hotel")
+      .populate("user", "username email")
       .sort({ createdAt: -1 });
+
     res.json({ success: true, bookings });
   } catch (error) {
     res.json({ success: false, message: "Failed to fetch bookings" });
