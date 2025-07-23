@@ -145,11 +145,6 @@ export const createBooking = async (req, res) => {
       </table>
 
       <p style="margin-top: 24px;">We look forward to welcoming you. If you need to make any changes, feel free to reach out to us.</p>
-
-      <a href="https://toursandtravelsnepal.netlify.app/download-receipt/${
-        booking._id
-      }" style="display: inline-block; margin-top: 16px; padding: 12px 20px; background-color: #dc143c; color: #fff; text-decoration: none; border-radius: 6px;">Download Receipt (PDF)</a>
-
       <p style="margin-top: 24px; font-size: 12px; color: #777;">© ${new Date().getFullYear()} Tours & Travels. All rights reserved.</p>
     </div>
   `,
