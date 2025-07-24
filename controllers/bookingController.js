@@ -123,7 +123,7 @@ export const createBooking = async (req, res) => {
           <td>${booking._id}</td>
         </tr>
         <tr>
-          <td><strong>Hotel Name:</strong></td>
+          <td><strong>Agency Name:</strong></td>
           <td>${roomData.hotel.name}</td>
         </tr>
         <tr>
